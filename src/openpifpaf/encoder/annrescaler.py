@@ -24,6 +24,7 @@ class AnnRescaler():
             )
 
             # rotate the davinci pose by 45 degrees
+            # The rotation might not need to be performed on the depth channel
             c, s = np.cos(np.deg2rad(45)), np.sin(np.deg2rad(45))
             rotate = np.array(((c, -s), (s, c)))
             self.pose_45 = np.copy(self.pose)
@@ -64,21 +65,23 @@ class AnnRescaler():
     @staticmethod
     def suppress_selfhidden_(keypoint_sets):
         for kpi in range(len(keypoint_sets[0])):
-            all_xyv = sorted([keypoints[kpi] for keypoints in keypoint_sets],
-                             key=lambda xyv: xyv[2], reverse=True)
-            for i, xyv in enumerate(all_xyv[1:], start=1):
-                if xyv[2] > 1.0:  # is visible
+            # all_xyv = sorted([keypoints[kpi] for keypoints in keypoint_sets],
+            #                  key=lambda xyv: xyv[2], reverse=True)
+            all_xyzv = sorted([keypoints[kpi] for keypoints in keypoint_sets],
+                             key=lambda xyzv: xyzv[2], reverse=True)
+            for i, xyzv in enumerate(all_xyzv[1:], start=1):
+                if xyzv[2] > 1.0:  # is visible
                     continue
-                if xyv[2] < 1.0:  # does not exist
+                if xyzv[2] < 1.0:  # does not exist
                     break
-                for prev_xyv in all_xyv[:i]:
-                    if prev_xyv[2] <= 1.0:  # do not suppress if both hidden
+                for prev_xyzv in all_xyzv[:i]:
+                    if prev_xyzv[2] <= 1.0:  # do not suppress if both hidden
                         break
-                    if np.abs(prev_xyv[0] - xyv[0]) > 32.0 \
-                       or np.abs(prev_xyv[1] - xyv[1]) > 32.0:
+                    if np.abs(prev_xyzv[0] - xyzv[0]) > 32.0 \
+                       or np.abs(prev_xyzv[1] - xyzv[1]) > 32.0:
                         continue
-                    LOG.debug('suppressing %s for %s (kp %d)', xyv, prev_xyv, i)
-                    xyv[2] = 0.0
+                    LOG.debug('suppressing %s for %s (kp %d)', xyzv, prev_xyzv, i)
+                    xyzv[2] = 0.0
                     break  # only need to suppress a keypoint once
 
     def keypoint_sets(self, anns):

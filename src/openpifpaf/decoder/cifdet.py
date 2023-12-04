@@ -58,6 +58,7 @@ class CifDet(Decoder):
         )
 
         # nms
+        # TODO: iou extend to 3d
         if self.nms_by_category:
             keep_index = torchvision.ops.batched_nms(boxes, scores, categories, self.iou_threshold)
         else:

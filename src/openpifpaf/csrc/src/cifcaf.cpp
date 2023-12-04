@@ -143,7 +143,8 @@ std::tuple<torch::Tensor, torch::Tensor> CifCaf::call_with_initial_annotations(
 
     utils::CifSeeds seeds(cifhr_accumulated, cifhr_revision);
     seeds.fill(cif_field, cif_stride);
-    auto [seeds_f, seeds_vxys] = seeds.get();
+    // auto [seeds_f, seeds_vxys] = seeds.get();
+    auto [seeds_f, seeds_vxyzs] = seeds.get();
     auto seeds_f_a = seeds_f.accessor<int64_t, 1>();
     auto seeds_vxys_a = seeds_vxys.accessor<float, 2>();
 #ifdef DEBUG

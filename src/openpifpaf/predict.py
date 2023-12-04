@@ -55,6 +55,7 @@ def cli():
         args.pin_memory = True
     LOG.info('neural network device: %s (CUDA available: %s, count: %d)',
              args.device, torch.cuda.is_available(), torch.cuda.device_count())
+    LOG.info('running from local git copy')
 
     decoder.configure(args)
     network.Factory.configure(args)

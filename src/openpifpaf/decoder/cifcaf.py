@@ -231,13 +231,16 @@ class CifCaf(Decoder):
             initial_ids_t = torch.empty((len(initial_annotations),), dtype=torch.int64)
             for i, (ann_py, ann_t) in enumerate(zip(initial_annotations, initial_annotations_t)):
                 for f in range(len(ann_py.data)):
-                    ann_t[f, 0] = float(ann_py.data[f, 2])
+                    # ann_t[f, 0] = float(ann_py.data[f, 2])
+                    ann_t[f, 0] = float(ann_py.data[f, 3])
                     ann_t[f, 1] = float(ann_py.data[f, 0])
                     ann_t[f, 2] = float(ann_py.data[f, 1])
-                    ann_t[f, 3] = float(ann_py.joint_scales[f])
+                    ann_t[f, 3] = float(ann_py.data[f, 2])
+                    # ann_t[f, 3] = float(ann_py.joint_scales[f])
+                    ann_t[f, 4] = float(ann_py.joint_scales[f])
                 initial_ids_t[i] = getattr(ann_py, 'id_', -1)
             LOG.debug('initial annotations = %d', initial_annotations_t.size(0))
-
+####### ann_t: [score, x, y, z, joint_scale] #######
         for vis, meta in zip(self.cif_visualizers, self.cif_metas):
             vis.predicted(fields[meta.head_index])
         for vis, meta in zip(self.caf_visualizers, self.caf_metas):
@@ -260,18 +263,23 @@ class CifCaf(Decoder):
             vis.predicted(fields, low)
 
         annotations_py = []
+        ### ToDo: modify cifseeds.cpp
         for ann_data, ann_id in zip(annotations, annotation_ids):
             ann = Annotation(self.cif_metas[0].keypoints,
                              self.caf_metas[0].skeleton,
                              score_weights=self.score_weights)
-            ann.data[:, :2] = ann_data[:, 1:3]
-            ann.data[:, 2] = ann_data[:, 0]
-            ann.joint_scales[:] = ann_data[:, 3]
+            # ann.data[:, :2] = ann_data[:, 1:3]
+            ann.data[:, :3] = ann_data[:, 1:4]
+            # ann.data[:, 2] = ann_data[:, 0]
+            ann.data[:, 3] = ann_data[:, 0]
+            # ann.joint_scales[:] = ann_data[:, 3]
+            ann.joint_scales[:] = ann_data[:, 4]
             if ann_id != -1:
                 ann.id_ = int(ann_id)
             annotations_py.append(ann)
 
         LOG.info('annotations %d: %s',
                  len(annotations_py),
-                 [np.sum(ann.data[:, 2] > 0.1) for ann in annotations_py])
+                #  [np.sum(ann.data[:, 2] > 0.1) for ann in annotations_py])
+                [np.sum(ann.data[:, 3] > 0.1) for ann in annotations_py])
         return annotations_py

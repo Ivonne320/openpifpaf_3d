@@ -12,7 +12,7 @@ class Base:
     def json_data(self, coordinate_digits=2):
         raise NotImplementedError
 
-
+# changing the annotation into 3d
 class Annotation(Base):
     def __init__(self, keypoints, skeleton, sigmas=None, *,
                  categories=None, score_weights=None, suppress_score_index=None):
@@ -24,7 +24,8 @@ class Annotation(Base):
         self.suppress_score_index = suppress_score_index
 
         self.category_id = 1
-        self.data = np.zeros((len(keypoints), 3), dtype=np.float32)
+        # self.data = np.zeros((len(keypoints), 3), dtype=np.float32)
+        self.data = np.zeros((len(keypoints), 4), dtype=np.float32)
         self.joint_scales = np.zeros((len(keypoints),), dtype=np.float32)
         self.fixed_score = None
         self.fixed_bbox = None
@@ -57,8 +58,9 @@ class Annotation(Base):
     def category(self):
         return self.categories[self.category_id - 1]
 
-    def add(self, joint_i, xyv):
-        self.data[joint_i] = xyv
+    # def add(self, joint_i, xyv):
+    def add(self, joint_i, xyzv):
+        self.data[joint_i] = xyzv
         return self
 
     def set(self, data, joint_scales=None, *, category_id=1, fixed_score=None, fixed_bbox=None):
@@ -77,22 +79,36 @@ class Annotation(Base):
         return self
 
     def rescale(self, scale_factor):
-        if len(scale_factor) == 2:
-            scale_x, scale_y = scale_factor
-            scale_factor = 0.5 * (scale_x + scale_y)
+        # if len(scale_factor) == 2:
+        #     scale_x, scale_y = scale_factor
+        #     scale_factor = 0.5 * (scale_x + scale_y)
+        # else:
+        #     scale_x = scale_factor
+        #     scale_y = scale_factor
+
+        # self.data[:, 0] *= scale_x
+        # self.data[:, 1] *= scale_y
+        if len(scale_factor) == 3:
+            scale_x, scale_y, scale_z = scale_factor
+            scale_factor = 1/3 * (scale_x + scale_y + scale_z)
         else:
             scale_x = scale_factor
             scale_y = scale_factor
-
+            scale_z = scale_factor
+            
         self.data[:, 0] *= scale_x
         self.data[:, 1] *= scale_y
+        self.data[:, 2] *= scale_z
+        
         if self.joint_scales is not None:
             self.joint_scales *= scale_factor
         for _, __, c1, c2 in self.decoding_order:
             c1[0:1] *= scale_x
             c1[1:2] *= scale_y
+            c1[2:3] *= scale_z
             c2[0:1] *= scale_x
             c2[1:2] *= scale_y
+            c2[2:3] *= scale_z
         return self
 
     @property
@@ -158,6 +174,8 @@ class Annotation(Base):
         w = np.max(kps[:, 0][m] + joint_scales[m]) - x
         h = np.max(kps[:, 1][m] + joint_scales[m]) - y
         return [x, y, w, h]
+    
+    ### ToDo: probably don't need to modify this
 
     def inverse_transform(self, meta):
         ann = copy.deepcopy(self)
