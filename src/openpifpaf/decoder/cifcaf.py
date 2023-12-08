@@ -232,12 +232,12 @@ class CifCaf(Decoder):
             for i, (ann_py, ann_t) in enumerate(zip(initial_annotations, initial_annotations_t)):
                 for f in range(len(ann_py.data)):
                     # ann_t[f, 0] = float(ann_py.data[f, 2])
-                    ann_t[f, 0] = float(ann_py.data[f, 3])
-                    ann_t[f, 1] = float(ann_py.data[f, 0])
-                    ann_t[f, 2] = float(ann_py.data[f, 1])
-                    ann_t[f, 3] = float(ann_py.data[f, 2])
+                    ann_t[f, 0] = float(ann_py.data[f, 3]) # visibility / score
+                    ann_t[f, 1] = float(ann_py.data[f, 0]) # x
+                    ann_t[f, 2] = float(ann_py.data[f, 1]) # y
+                    ann_t[f, 3] = float(ann_py.data[f, 2]) # z
                     # ann_t[f, 3] = float(ann_py.joint_scales[f])
-                    ann_t[f, 4] = float(ann_py.joint_scales[f])
+                    ann_t[f, 4] = float(ann_py.joint_scales[f]) # scale
                 initial_ids_t[i] = getattr(ann_py, 'id_', -1)
             LOG.debug('initial annotations = %d', initial_annotations_t.size(0))
 ####### ann_t: [score, x, y, z, joint_scale] #######
@@ -263,7 +263,7 @@ class CifCaf(Decoder):
             vis.predicted(fields, low)
 
         annotations_py = []
-        ### ToDo: modify cifseeds.cpp
+        ### ToDo: modify cifseeds.cpp 
         for ann_data, ann_id in zip(annotations, annotation_ids):
             ann = Annotation(self.cif_metas[0].keypoints,
                              self.caf_metas[0].skeleton,

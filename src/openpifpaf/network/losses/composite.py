@@ -7,7 +7,7 @@ import torch
 from . import components
 
 LOG = logging.getLogger(__name__)
-
+#### to be reconstructed ####
 
 class CompositeLoss(torch.nn.Module):
     """Default loss since v0.13"""
@@ -36,11 +36,13 @@ class CompositeLoss(torch.nn.Module):
                     [
                         2 + vi * 2,
                         2 + vi * 2 + 1,
+                        2 + vi * 2 + 2,
                         2 + head_meta.n_vectors * 2 + vi,
                     ],
                     [
                         1 + vi * 2,
                         1 + vi * 2 + 1,
+                        1 + vi * 2 + 2,
                         1 + head_meta.n_vectors * 2 + vi,
                         1 + head_meta.n_vectors * 3 + vi,
                     ],
@@ -55,12 +57,14 @@ class CompositeLoss(torch.nn.Module):
                     [
                         2 + vi * 2,
                         2 + vi * 2 + 1,
+                        2 + vi * 2 + 2,
                         2 + 1 * 2,  # width
                         2 + 1 * 2 + 1,  # height
                     ],
                     [
                         1 + vi * 2,
                         1 + vi * 2 + 1,
+                        1 + vi * 2 + 2,
                         1 + 2 * 2 + vi,
                         1 + 1 * 2,  # width
                         1 + 1 * 2 + 1,  # height
