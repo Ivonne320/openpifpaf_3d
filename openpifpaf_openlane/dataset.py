@@ -16,7 +16,8 @@ STAT_LOG = logging.getLogger(__name__.replace('openpifpaf.', 'openpifpaf.stats.'
 class CocoDataset(torch.utils.data.Dataset):
     """`MS Coco Detection <http://mscoco.org/dataset/#detections-challenge2016>`_ Dataset.
 
-    Args:+ing): Root directory where images are downloaded to.
+    Args:
+        image_dir (string): Root directory where images are downloaded to.
         ann_file (string): Path to json annotation file.
     """
 
@@ -35,7 +36,11 @@ class CocoDataset(torch.utils.data.Dataset):
 
         self.category_ids = category_ids
 
-        self.ids = self.coco.getImgIds(catIds=self.category_ids)
+        self.ids = []
+        for cat_id in self.category_ids:
+            self.ids.extend(self.coco.getImgIds(catIds=cat_id))
+
+        print("IDS:", self.ids)
         if annotation_filter:
             self.filter_for_annotations(min_kp_anns=min_kp_anns)
         elif min_kp_anns:
@@ -59,6 +64,7 @@ class CocoDataset(torch.utils.data.Dataset):
 
         self.ids = [image_id for image_id in self.ids if filter_image(image_id)]
         LOG.info('... done.')
+       
 
     def class_aware_sample_weights(self, max_multiple=10.0):
         """Class aware sampling.
@@ -108,6 +114,7 @@ class CocoDataset(torch.utils.data.Dataset):
 
         image_info = self.coco.loadImgs([image_id])[0]
         LOG.debug('image %s info: %s', image_id, image_info)
+
         local_file_path = os.path.join(self.image_dir, image_info['file_name'])
         with open(local_file_path, 'rb') as f:
             image = Image.open(f).convert('RGB')
