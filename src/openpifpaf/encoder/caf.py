@@ -119,10 +119,12 @@ class AssociationFiller:
 
             joint1 = keypoints[joint1i]
             joint2 = keypoints[joint2i]
-            if joint1[2] <= self.config.v_threshold or joint2[2] <= self.config.v_threshold:
+            # if joint1[2] <= self.config.v_threshold or joint2[2] <= self.config.v_threshold:
+            if joint1[3] <= self.config.v_threshold or joint2[3] <= self.config.v_threshold:
                 continue
 
-            d = np.linalg.norm(joint1[:2] - joint2[:2])
+            d = np.linalg.norm(joint1[:2] - joint2[:2]) ## to validate
+            # d = np.linalg.norm(joint1[:3] - joint2[:3])
             shortest = min(d, shortest)
 
         return shortest
@@ -131,7 +133,8 @@ class AssociationFiller:
         for field_i, joint1i, joint2i in self.config.fill_plan:
             joint1 = keypoints[joint1i]
             joint2 = keypoints[joint2i]
-            if joint1[2] <= self.config.v_threshold or joint2[2] <= self.config.v_threshold:
+            # if joint1[2] <= self.config.v_threshold or joint2[2] <= self.config.v_threshold:
+            if joint1[3] <= self.config.v_threshold or joint2[3] <= self.config.v_threshold:
                 continue
 
             # check if there are shorter connections in the sparse skeleton

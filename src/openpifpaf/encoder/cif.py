@@ -68,7 +68,8 @@ class CifGenerator():
         field_w = bg_mask.shape[1] + 2 * self.config.padding
         field_h = bg_mask.shape[0] + 2 * self.config.padding
         self.intensities = np.zeros((n_fields, field_h, field_w), dtype=np.float32)
-        self.fields_reg = np.full((n_fields, 2, field_h, field_w), np.nan, dtype=np.float32)
+        # self.fields_reg = np.full((n_fields, 2, field_h, field_w), np.nan, dtype=np.float32)
+        self.fields_reg = np.zeros((n_fields, 3, field_h, field_w), np.nan, dtype=np.float32)
         self.fields_bmin = np.full((n_fields, field_h, field_w), np.nan, dtype=np.float32)
         self.fields_scale = np.full((n_fields, field_h, field_w), np.nan, dtype=np.float32)
         self.fields_reg_l = np.full((n_fields, field_h, field_w), np.inf, dtype=np.float32)
@@ -84,8 +85,9 @@ class CifGenerator():
 
     def fill_keypoints(self, keypoints):
         scale = self.rescaler.scale(keypoints)
-        for f, xyv in enumerate(keypoints):
-            if xyv[2] <= self.config.v_threshold:
+        # for f, xyv in enumerate(keypoints):
+        for f, xyzv in enumerate(keypoints):
+            if xyzv[3] <= self.config.v_threshold:
                 continue
 
             joint_scale = (
@@ -94,7 +96,7 @@ class CifGenerator():
                 else scale * self.config.meta.sigmas[f]
             )
 
-            self.fill_coordinate(f, xyv, joint_scale)
+            self.fill_coordinate(f, xyzv, joint_scale)
 
     def fill_coordinate(self, f, xyv, scale):
         ij = np.round(xyv[:2] - self.s_offset).astype(np.intc) + self.config.padding
@@ -140,6 +142,7 @@ class CifGenerator():
         mask_valid_area(intensities, valid_area)
         mask_valid_area(fields_reg[:, 0], valid_area, fill_value=np.nan)
         mask_valid_area(fields_reg[:, 1], valid_area, fill_value=np.nan)
+        mask_valid_area(fields_reg[:, 2], valid_area, fill_value=np.nan)
         mask_valid_area(fields_bmin, valid_area, fill_value=np.nan)
         mask_valid_area(fields_scale, valid_area, fill_value=np.nan)
 

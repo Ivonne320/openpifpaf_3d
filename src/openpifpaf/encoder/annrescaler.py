@@ -68,20 +68,21 @@ class AnnRescaler():
             # all_xyv = sorted([keypoints[kpi] for keypoints in keypoint_sets],
             #                  key=lambda xyv: xyv[2], reverse=True)
             all_xyzv = sorted([keypoints[kpi] for keypoints in keypoint_sets],
-                             key=lambda xyzv: xyzv[2], reverse=True)
+                            #  key=lambda xyzv: xyzv[2], reverse=True)
+                            key=lambda xyzv: xyzv[3], reverse=False)
             for i, xyzv in enumerate(all_xyzv[1:], start=1):
-                if xyzv[2] > 1.0:  # is visible
+                if xyzv[3] > 1.0:  # is visible
                     continue
-                if xyzv[2] < 1.0:  # does not exist
+                if xyzv[3] < 1.0:  # does not exist
                     break
                 for prev_xyzv in all_xyzv[:i]:
-                    if prev_xyzv[2] <= 1.0:  # do not suppress if both hidden
+                    if prev_xyzv[3] <= 1.0:  # do not suppress if both hidden
                         break
                     if np.abs(prev_xyzv[0] - xyzv[0]) > 32.0 \
                        or np.abs(prev_xyzv[1] - xyzv[1]) > 32.0:
                         continue
                     LOG.debug('suppressing %s for %s (kp %d)', xyzv, prev_xyzv, i)
-                    xyzv[2] = 0.0
+                    xyzv[3] = 0.0
                     break  # only need to suppress a keypoint once
 
     def keypoint_sets(self, anns):
@@ -97,7 +98,8 @@ class AnnRescaler():
 
         if self.suppress_invisible:
             for kps in keypoint_sets:
-                kps[kps[:, 2] < 2.0, 2] = 0.0
+                # kps[kps[:, 2] < 2.0, 2] = 0.0 ## to validate
+                kps[kps[:, 3] < 2.0, 3] = 0.0
         elif self.suppress_selfhidden:
             self.suppress_selfhidden_(keypoint_sets)
 
@@ -113,7 +115,8 @@ class AnnRescaler():
         ), dtype=np.bool_)
         for ann in anns:
             if not ann['iscrowd']:
-                valid_keypoints = 'keypoints' in ann and np.any(ann['keypoints'][:, 2] > 0)
+                # valid_keypoints = 'keypoints' in ann and np.any(ann['keypoints'][:, 2] > 0)
+                valid_keypoints = 'keypoints' in ann and np.any(ann['keypoints'][:, 3] > 0)
                 if valid_keypoints:
                     continue
 
@@ -143,7 +146,8 @@ class AnnRescaler():
         return mask
 
     def scale(self, keypoints):
-        visible = keypoints[:, 2] > 0
+        # visible = keypoints[:, 2] > 0
+        visible = keypoints[:, 3] > 0   
         if np.sum(visible) < 3:
             return np.nan
 
@@ -306,7 +310,8 @@ class TrackingAnnRescaler(AnnRescaler):
 
         if self.suppress_invisible:
             for kps in keypoint_sets:
-                kps[kps[:, 2] < 2.0, 2] = 0.0
+                # kps[kps[:, 2] < 2.0, 2] = 0.0
+                kps[kps[:, 3] < 2.0, 3] = 0.0
 
         for keypoints in keypoint_sets:
             keypoints[:, :2] /= self.stride

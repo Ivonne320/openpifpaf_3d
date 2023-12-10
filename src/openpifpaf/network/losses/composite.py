@@ -32,19 +32,28 @@ class CompositeLoss(torch.nn.Module):
             # keypoints and associations: vectors matched with scales and can
             # have additional scales
             regression_components = [
-                components.Regression(
+                components.Regression( # for cif: [2,3,4,5][1,2,3,4,5], for caf: to Test
                     [
-                        2 + vi * 2,
-                        2 + vi * 2 + 1,
-                        2 + vi * 2 + 2,
-                        2 + head_meta.n_vectors * 2 + vi,
+                        # 2 + vi * 2,
+                        2 + vi * 3,
+                        # 2 + vi * 2 + 1,
+                        2 + vi * 3 + 1,
+                        # 2 + vi * 2 + 2,
+                        2 + vi * 3 + 2,
+                        # 2 + head_meta.n_vectors * 2 + vi,
+                        2 + head_meta.n_vectors * 3 + vi,
                     ],
                     [
-                        1 + vi * 2,
-                        1 + vi * 2 + 1,
-                        1 + vi * 2 + 2,
-                        1 + head_meta.n_vectors * 2 + vi,
+                        # 1 + vi * 2,
+                        1 + vi * 3,
+                        # 1 + vi * 2 + 1,
+                        1 + vi * 3 + 1,
+                        # 1 + vi * 2 + 2,
+                        1 + vi * 3 + 2,
+                        # 1 + head_meta.n_vectors * 2 + vi,
                         1 + head_meta.n_vectors * 3 + vi,
+                        # 1 + head_meta.n_vectors * 3 + vi,
+                        1 + head_meta.n_vectors * 4 + vi,
                     ],
                     weights=weights,
                 )
@@ -81,9 +90,11 @@ class CompositeLoss(torch.nn.Module):
 
         if head_meta.n_scales:
             loss_components[f'{head_meta.dataset}.{head_meta.name}.scales'] = [
-                components.Scale(
-                    [2 + head_meta.n_vectors * 2 + si],
-                    [1 + head_meta.n_vectors * 3 + si],
+                components.Scale( # to test for caf
+                    # [2 + head_meta.n_vectors * 2 + si],
+                    [2 + head_meta.n_vectors * 3 + si],
+                    # [1 + head_meta.n_vectors * 3 + si],
+                    [1 + head_meta.n_vectors * 4 + si],
                     weights=weights,
                 )
                 for si in range(head_meta.n_scales)
