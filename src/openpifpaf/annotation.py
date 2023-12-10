@@ -79,36 +79,22 @@ class Annotation(Base):
         return self
 
     def rescale(self, scale_factor):
-        # if len(scale_factor) == 2:
-        #     scale_x, scale_y = scale_factor
-        #     scale_factor = 0.5 * (scale_x + scale_y)
-        # else:
-        #     scale_x = scale_factor
-        #     scale_y = scale_factor
-
-        # self.data[:, 0] *= scale_x
-        # self.data[:, 1] *= scale_y
-        if len(scale_factor) == 3:
-            scale_x, scale_y, scale_z = scale_factor
-            scale_factor = 1/3 * (scale_x + scale_y + scale_z)
+        if len(scale_factor) == 2:
+            scale_x, scale_y = scale_factor
+            scale_factor = 0.5 * (scale_x + scale_y)
         else:
             scale_x = scale_factor
             scale_y = scale_factor
-            scale_z = scale_factor
-            
+
         self.data[:, 0] *= scale_x
         self.data[:, 1] *= scale_y
-        self.data[:, 2] *= scale_z
-        
         if self.joint_scales is not None:
             self.joint_scales *= scale_factor
         for _, __, c1, c2 in self.decoding_order:
             c1[0:1] *= scale_x
             c1[1:2] *= scale_y
-            c1[2:3] *= scale_z
             c2[0:1] *= scale_x
             c2[1:2] *= scale_y
-            c2[2:3] *= scale_z
         return self
 
     @property
@@ -116,7 +102,8 @@ class Annotation(Base):
         if self.fixed_score is not None:
             return self.fixed_score
 
-        v = self.data[:, 2]
+        # v = self.data[:, 2]
+        v = self.data[:, 3]
         if self.suppress_score_index is not None:
             v = np.copy(v)
             v[self.suppress_score_index] = 0.0
@@ -126,7 +113,8 @@ class Annotation(Base):
         return np.sum(self.score_weights * np.sort(v)[::-1])
 
     def scale(self, v_th=0.5):
-        m = self.data[:, 2] > v_th
+        # m = self.data[:, 2] > v_th
+        m = self.data[:, 3] > v_th
         if not np.any(m):
             return 0.0
         return max(
@@ -138,9 +126,11 @@ class Annotation(Base):
         """Data ready for json dump."""
 
         # avoid visible keypoints becoming invisible due to rounding
-        v_mask = self.data[:, 2] > 0.0
+        # v_mask = self.data[:, 2] > 0.0
+        v_mask = self.data[:, 3] > 0.0
         keypoints = np.copy(self.data)
-        keypoints[v_mask, 2] = np.maximum(0.01, keypoints[v_mask, 2])
+        # keypoints[v_mask, 2] = np.maximum(0.01, keypoints[v_mask, 2])
+        keypoints[v_mask, 3] = np.maximum(0.01, keypoints[v_mask, 3])
         keypoints = np.around(keypoints.astype(np.float64), coordinate_digits)
 
         # convert to float64 before rounding because otherwise extra digits
@@ -165,7 +155,8 @@ class Annotation(Base):
 
     @staticmethod
     def bbox_from_keypoints(kps, joint_scales):
-        m = kps[:, 2] > 0
+        # m = kps[:, 2] > 0
+        m = kps[:, 3] > 0
         if not np.any(m):
             return [0, 0, 0, 0]
 

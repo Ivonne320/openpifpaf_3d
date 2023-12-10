@@ -25,7 +25,8 @@ class NormalizeAnnotations(Preprocess):
             if 'iscrowd' not in ann:
                 ann['iscrowd'] = False
 
-            ann['keypoints'] = np.asarray(ann['keypoints'], dtype=np.float32).reshape(-1, 3)
+            # ann['keypoints'] = np.asarray(ann['keypoints'], dtype=np.float32).reshape(-1, 3)
+            ann['keypoints'] = np.asarray(ann['keypoints'], dtype=np.float32).reshape(-1, 4)    # 4: x, y, z, v
             if 'bbox' not in ann:
                 ann['bbox'] = cls.bbox_from_keypoints(ann['keypoints'])
             ann['bbox'] = np.asarray(ann['bbox'], dtype=np.float32)
@@ -38,7 +39,8 @@ class NormalizeAnnotations(Preprocess):
 
     @staticmethod
     def bbox_from_keypoints(keypoints):
-        visible_keypoints = keypoints[keypoints[:, 2] > 0.0]
+        # visible_keypoints = keypoints[keypoints[:, 2] > 0.0]
+        visible_keypoints = keypoints[keypoints[:, 3] > 0.0]
         if not visible_keypoints.shape[0]:
             return [0, 0, 0, 0]
 

@@ -41,7 +41,8 @@ class ToKpAnnotations:
                 fixed_bbox=ann.get('bbox'),
             )
             for ann in anns
-            if not ann['iscrowd'] and np.any(ann['keypoints'][:, 2] > 0.0)
+            # if not ann['iscrowd'] and np.any(ann['keypoints'][:, 2] > 0.0)
+            if not ann['iscrowd'] and np.any(ann['keypoints'][:, 3] > 0.0) 
         ]
 
 
