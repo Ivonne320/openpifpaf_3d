@@ -238,7 +238,8 @@ class CafGenerator(AssociationFiller):
         self.fields_scale2 = None
 
     def init_fields(self, bg_mask):
-        reg_field_shape = (self.field_shape[0], 2, self.field_shape[1], self.field_shape[2])
+        # reg_field_shape = (self.field_shape[0], 2, self.field_shape[1], self.field_shape[2])
+        reg_field_shape = (self.field_shape[0], 3, self.field_shape[1], self.field_shape[2])
 
         self.intensities = np.zeros(self.field_shape, dtype=np.float32)
         self.fields_reg1 = np.full(reg_field_shape, np.nan, dtype=np.float32)
@@ -264,8 +265,12 @@ class CafGenerator(AssociationFiller):
 
         # update regressions
         fxy = fij - self.config.padding
-        self.fields_reg1[field_i, :, fij[1], fij[0]] = keypoints[joint1i][:2] - fxy
-        self.fields_reg2[field_i, :, fij[1], fij[0]] = keypoints[joint2i][:2] - fxy
+        # self.fields_reg1[field_i, :, fij[1], fij[0]] = keypoints[joint1i][:2] - fxy
+        self.fields_reg1[field_i, :2, fij[1], fij[0]] = keypoints[joint1i][:2] - fxy
+        self.fields_reg1[field_i, 2, fij[1], fij[0]] = keypoints[joint1i][2]
+        # self.fields_reg2[field_i, :, fij[1], fij[0]] = keypoints[joint2i][:2] - fxy
+        self.fields_reg2[field_i, :2, fij[1], fij[0]] = keypoints[joint2i][:2] - fxy
+        self.fields_reg2[field_i, 2, fij[1], fij[0]] = keypoints[joint2i][2]
 
         # update bmin
         bmin = self.config.bmin / self.config.meta.stride
@@ -296,8 +301,10 @@ class CafGenerator(AssociationFiller):
         mask_valid_area(intensities, valid_area)
         mask_valid_area(fields_reg1[:, 0], valid_area, fill_value=np.nan)
         mask_valid_area(fields_reg1[:, 1], valid_area, fill_value=np.nan)
+        mask_valid_area(fields_reg1[:, 2], valid_area, fill_value=np.nan)
         mask_valid_area(fields_reg2[:, 0], valid_area, fill_value=np.nan)
         mask_valid_area(fields_reg2[:, 1], valid_area, fill_value=np.nan)
+        mask_valid_area(fields_reg2[:, 2], valid_area, fill_value=np.nan)
         mask_valid_area(fields_bmin1, valid_area, fill_value=np.nan)
         mask_valid_area(fields_bmin2, valid_area, fill_value=np.nan)
         mask_valid_area(fields_scale1, valid_area, fill_value=np.nan)
