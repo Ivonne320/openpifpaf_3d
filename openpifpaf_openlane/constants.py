@@ -15,7 +15,7 @@ import openpifpaf
 IMAGE_WIDTH = 1920
 IMAGE_HEIGHT = 1280
 
-LANE_KEYPOINTS_48 = [
+LANE_KEYPOINTS_24 = [
     '1',       # 1 the nearest
     '2',       # 2 
     '3',       # 3
@@ -40,54 +40,26 @@ LANE_KEYPOINTS_48 = [
     '22',      # 22
     '23',      # 23
     '24',      # 24
-    '25',      # 25
-    '26',      # 26
-    '27',      # 27
-    '28',      # 28
-    '29',      # 29
-    '30',      # 30
-    '31',      # 31
-    '32',      # 32
-    '33',      # 33
-    '34',      # 34
-    '35',      # 35
-    '36',      # 36
-    '37',      # 37
-    '38',      # 38
-    '39',      # 39
-    '40',      # 40
-    '41',      # 41
-    '42',      # 42
-    '43',      # 43
-    '44',      # 44
-    '45',      # 45
-    '46',      # 46
-    '47',      # 47
-    '48',      # 48
 ]
 
-LANE_SKELETON_48 = [
+LANE_SKELETON_24 = [
   (1,2),(2,3),(3,4),(4,5),(5,6),(6,7),(7,8),(8,9),(9,10),
   (10,11),(11,12),(12,13),(13,14),(14,15),(15,16),(16,17),
-  (17,18),(18,19),(19,20),(20,21),(21,22),(22,23),(23,24),
-    (25,26),(26,27),(27,28),(28,29),(29,30),(30,31),(31,32),
-    (32,33),(33,34),(34,35),(35,36),(36,37),(37,38),(38,39),
-    (39,40),(40,41),(41,42),(42,43),(43,44),(44,45),(45,46),
-    (46,47),(47,48)
+  (17,18),(18,19),(19,20),(20,21),(21,22),(22,23),(23,24)
 ]
 
 
-LANE_SIGMAS_48 = [0.05] * len(LANE_KEYPOINTS_48)  
+LANE_SIGMAS_24 = [0.05] * len(LANE_KEYPOINTS_24)  
 
-split, error = divmod(len(LANE_KEYPOINTS_48), 4)
-LANE_SCORE_WEIGHTS_48 = [10.0] * split + [3.0] * split + \
+split, error = divmod(len(LANE_KEYPOINTS_24), 4)
+LANE_SCORE_WEIGHTS_24 = [10.0] * split + [3.0] * split + \
     [1.0] * split + [0.1] * split + [0.1] * error  
 
-assert len(LANE_SCORE_WEIGHTS_48) == len(LANE_KEYPOINTS_48)
+assert len(LANE_SCORE_WEIGHTS_24) == len(LANE_KEYPOINTS_24)
 
 
 
-LANE_CATEGORIES_48 = ['unkown',             # 0
+LANE_CATEGORIES_24 = ['unkown',             # 0
                         'white-dash',         # 1
                         'white-solid',        # 2
                         'double-white-dash',  # 3
@@ -104,44 +76,65 @@ LANE_CATEGORIES_48 = ['unkown',             # 0
                         'right-curbside'      # 21
                       ]
 
-LANE_POSE_STRAIGHT_24 = np.array([
-    [3.0, 4.0, 1.0], # 1
-    [1.34, 2.91, 1.0], # 2
-    [0.41, 2.30, 1.0], # 3
-    [-0.36, 1.79, 1.0], # 4
-    [-0.47, 1.70, 1.0], # 5
-    [-0.72, 1.53, 1.0], # 6
-    [-1.16, 1.25, 1.0], # 7
-    [-1.26, 1.19, 1.0], # 8
-    [-1.49, 1.04, 1.0], # 9
-    [-1.79, 0.86, 1.0], # 10
-    [-1.88, 0.77, 1.0], # 11
-    [-2.13, 0.64, 1.0], # 12
-    [-2.19, 0.57, 1.0],  # 13
-    [-2.22, 0.53, 1.0],  # 14
-    [-2.36, 0.44, 1.0],  # 15
-    [-2.47, 0.38, 1.0],  # 16
-    [-2.46, 0.37, 1.0],  # 17
-    [-2.57, 0.28, 1.0],  # 18
-    [-2.62, 0.25, 1.0],  # 19
-    [-2.73, 0.18, 1.0],  # 20
-    [-2.79, 0.13, 1.0],  # 21
-    [-2.89, 0.08, 1.0],  # 22
-    [-2.97, 0.04, 1.0],  # 23
-    [-3.0, 0.0, 1.0],  # 24
+# LANE_POSE_STRAIGHT_24 = np.array([
+#     [3.0, 4.0, 0., 1.0], # 1
+#     [1.34, 2.91, 0.5, 1.0], # 2
+#     [0.41, 2.30, 1., 1.0], # 3
+#     [-0.36, 1.79, 1.5, 1.0], # 4
+#     [-0.47, 1.70, 2., 1.0], # 5
+#     # match the dimension
+#     [-0.72, 1.53, 1.0], # 6
+#     [-1.16, 1.25, 1.0], # 7
+#     [-1.26, 1.19, 1.0], # 8
+#     [-1.49, 1.04, 1.0], # 9
+#     [-1.79, 0.86, 1.0], # 10
+#     [-1.88, 0.77, 1.0], # 11
+#     [-2.13, 0.64, 1.0], # 12
+#     [-2.19, 0.57, 1.0],  # 13
+#     [-2.22, 0.53, 1.0],  # 14
+#     [-2.36, 0.44, 1.0],  # 15
+#     [-2.47, 0.38, 1.0],  # 16
+#     [-2.46, 0.37, 1.0],  # 17
+#     [-2.57, 0.28, 1.0],  # 18
+#     [-2.62, 0.25, 1.0],  # 19
+#     [-2.73, 0.18, 1.0],  # 20
+#     [-2.79, 0.13, 1.0],  # 21
+#     [-2.89, 0.08, 1.0],  # 22
+#     [-2.97, 0.04, 1.0],  # 23
+#     [-3.0, 0.0, 1.0],  # 24
     
+# ])
+# generate new LANE_POSE_STRAIGHT_24 based on the first 5 rows of LANE_POSE_STRAIGHT_24, match the dimension
+LANE_POSE_STRAIGHT_24 = np.array([
+    [3.0, 4.0, 0., 1.0], # 1
+    [1.34, 2.91, 0.5, 1.0], # 2
+    [0.41, 2.30, 1., 1.0], # 3
+    [-0.36, 1.79, 1.5, 1.0], # 4
+    [-0.47, 1.70, 2., 1.0], # 5
+    [-0.72, 1.53, 2.5, 1.0], # 6
+    [-1.16, 1.25, 3., 1.0], # 7
+    [-1.26, 1.19, 3.5, 1.0], # 8
+    [-1.49, 1.04, 4., 1.0], # 9
+    [-1.79, 0.86, 4.5, 1.0], # 10
+    [-1.88, 0.77, 5., 1.0], # 11
+    [-2.13, 0.64, 5.5, 1.0], # 12
+    [-2.19, 0.57, 6., 1.0],  # 13
+    [-2.22, 0.53, 6.5, 1.0],  # 14
+    [-2.36, 0.44, 7., 1.0],  # 15
+    [-2.47, 0.38, 7.5, 1.0],  # 16
+    [-2.46, 0.37, 8., 1.0],  # 17
+    [-2.57, 0.28, 8.5, 1.0],  # 18
+    [-2.62, 0.25, 9., 1.0],  # 19
+    [-2.73, 0.18, 9.5, 1.0],  # 20
+    [-2.79, 0.13, 10., 1.0],  # 21
+    [-2.89, 0.08, 10.5, 1.0],  # 22
+    [-2.97, 0.04, 11., 1.0],  # 23
+    [-3.0, 0.0, 11.5, 1.0],  # 24
 ])
-# interpolate LANE_POSE_STRAIGHT_24 to LANE_POSE_STRAIGHT_48
-LANE_POSE_STRAIGHT_48 = np.zeros((48, 3))
-LANE_POSE_STRAIGHT_48[0::2] = LANE_POSE_STRAIGHT_24
-average = LANE_POSE_STRAIGHT_24[:-1] * 0.5 + LANE_POSE_STRAIGHT_24[1:] * 0.5
-average = np.vstack((average, LANE_POSE_STRAIGHT_24[-1]))
-LANE_POSE_STRAIGHT_48[1::2] = average
-
 
 def get_constants():
-  return [LANE_KEYPOINTS_48, LANE_SKELETON_48, LANE_SIGMAS_48,
-                LANE_POSE_STRAIGHT_48, LANE_CATEGORIES_48, LANE_SCORE_WEIGHTS_48]
+  return [LANE_KEYPOINTS_24, LANE_SKELETON_24, LANE_SIGMAS_24,
+                LANE_POSE_STRAIGHT_24, LANE_CATEGORIES_24, LANE_SCORE_WEIGHTS_24]
 
 def draw_ann(ann, *, keypoint_painter, filename=None, margin=0.5, aspect=None, **kwargs):
     from openpifpaf import show  # pylint: disable=import-outside-toplevel
@@ -222,8 +215,8 @@ def plot3d_red(ax_2D, p3d, skeleton):
 
 def print_associations():
     print("\nAssociations of the lane skeleton with 24 keypoints")
-    for j1, j2 in LANE_SKELETON_48:
-        print(LANE_KEYPOINTS_48[j1 - 1], '-', LANE_KEYPOINTS_48[j2 - 1])
+    for j1, j2 in LANE_SKELETON_24:
+        print(LANE_KEYPOINTS_24[j1 - 1], '-', LANE_KEYPOINTS_24[j2 - 1])
 
 
 def main():

@@ -105,11 +105,44 @@ class OpenLaneToCoco:
         v_new = np.interp(target_distances, cum_distances, v)
         
         return u_new, v_new
+    
+    def downsample_3d(self, u, v, z, target_length=24):
+        """
+        Downsample the number of keypoints to target_length, keeping the first and last keypoints, 
+        while maintaining equal distance between keypoints in 3D space.
+        :param u: x coordinates of keypoints (image coordinate)
+        :param v: y coordinates of keypoints (image coordinate)
+        :param z: z coordinates of keypoints (depth in meters)
+        :param target_length: number of keypoints to downsample to
+        :return: downsampled u, v, and z coordinates
+        """
+
+        # Calculate cumulative distance in 3D
+        delta_u = np.diff(u)
+        delta_v = np.diff(v)
+        delta_z = np.diff(z)
+        distances = np.sqrt(delta_u**2 + delta_v**2 + delta_z**2)
+        cum_distances = np.insert(np.cumsum(distances), 0, 0)
+
+        # Create target distances for interpolation
+        total_distance = cum_distances[-1]
+        target_distances = np.linspace(0, total_distance, int(target_length))
+
+        # Interpolate the u, v, and z values
+        u_new = np.interp(target_distances, cum_distances, u)
+        v_new = np.interp(target_distances, cum_distances, v)
+        z_new = np.interp(target_distances, cum_distances, z)
+        
+        return u_new, v_new, z_new
 
     def process(self):
         """
         Iterate all json annotations, process into a single json file compatible with coco format
         """
+        cam_representation = np.array([[0, -1, 0, 0],
+                                [0, 0, -1, 0],
+                                [1, 0, 0, 0],
+                                [0, 0, 0, 1]], dtype=float)
 
         for phase, ann_paths in self.splits.items(): #Iterate through training and validation (phases) annotations 
             #keep count?
@@ -122,7 +155,7 @@ class OpenLaneToCoco:
             if self.sample:
                 #keep 25% of the dataset, uniformly distributed
 
-                ann_paths = ann_paths[::4]
+                ann_paths = ann_paths[::20]
                 
 
             if self.single_sample:
@@ -162,29 +195,33 @@ class OpenLaneToCoco:
         
                 #extract keypoints, visibility, category, and load into COCO annotations field
                 lane_lines = openlane_data['lane_lines']
+                intrinsics = openlane_data['intrinsic']
 
                 """
                 Update annotation field in json file for each lane in image
                 """    
                 for lane in lane_lines:
                     category_id = lane['category']
-                    kp_coords = np.array(lane['uv']) #take the image coords, not the camera coords
+                    # kp_coords = np.array(lane['uv']) #take the image coords, not the camera coords
+                    # project to image plane
+                    xyz_coords = np.array(lane['xyz']) 
+                    visibility = np.array(lane['visibility'])
+                    z = xyz_coords[0]
+                    xyz_coords = np.vstack((xyz_coords, np.ones(xyz_coords.shape[1])))
+                    xyz_coords = np.matmul(cam_representation, xyz_coords)
+                    xyz_coords = xyz_coords[0:3, :]
+                    xyz_coords = np.matmul(intrinsics, xyz_coords) 
+                    u = xyz_coords[0,:] / xyz_coords[2,:]
+                    v = xyz_coords[1,:] / xyz_coords[2,:]
 
                     #note kp_coords format is [[u],[v]]
-                    num_kp = len(kp_coords[0])
-                    # if num_kp < 24:
-                    #     continue
-                    
-                    # #downsample to 24 kps
-                    # kp_coords = kp_coords[:,::num_kp//24]
-                    # #make sure to keep only the first 24 keypoints [u,v,1] in kps
-                    # kp_coords = kp_coords[:,:24]
-                    # #update num_kp to the new number of keypoints, it should be 24
-                    # num_kp = int(len(kp_coords[0]))
-                    new_u, new_v = self.downsample(kp_coords[0], kp_coords[1])
-                    new_u, new_v = self.downsample(new_u, new_v)
-                    num_kp = int(len(kp_coords[0]))
-                    new_kp_coords = [new_u, new_v]
+                    num_kp = len(xyz_coords[0])
+                    if num_kp < 24:
+                        continue
+                
+                    new_u, new_v, new_z = self.downsample_3d(u, v, z)
+                    new_u, new_v, new_z = self.downsample_3d(new_u, new_v, new_z)
+                    new_kp_coords = [new_u, new_v, new_z]
 
                     #TODO: figure out why number of points in visibility != len(uv) but = len(xyz).
                     #For now, assume all points have visibility = 1
@@ -192,8 +229,10 @@ class OpenLaneToCoco:
                    
                     kps = []
                     #keypoints need to be in [xi, yi, vi format]
-                    for u, v in zip(new_kp_coords[0], new_kp_coords[1]):
-                        kps.extend([u, v, 1]) #Note: visibility might not be correct
+                    for u, v, z, visibility_1 in zip(new_kp_coords[0], new_kp_coords[1], new_kp_coords[2], visibility):
+                        kps.extend([u, v, z, visibility_1]) #Note: visibility might not be correct
+                        
+                    num_kp = len(kps)
                 
                     #define bounding box based on area derived from 2d coords     
                     box_tight = [np.min(new_kp_coords[0]), np.min(new_kp_coords[1]),

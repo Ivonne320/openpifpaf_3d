@@ -58,8 +58,10 @@ class CocoDataset(torch.utils.data.Dataset):
             anns = [ann for ann in anns if not ann.get('iscrowd')]
             if not anns:
                 return False
+            # kp_anns = [ann for ann in anns
+                    #    if 'keypoints' in ann and any(v > 0.0 for v in ann['keypoints'][2::3])]
             kp_anns = [ann for ann in anns
-                       if 'keypoints' in ann and any(v > 0.0 for v in ann['keypoints'][2::3])]
+                       if 'keypoints' in ann and any(v > 0.0 for v in ann['keypoints'][3::4])]
             return len(kp_anns) >= min_kp_anns
 
         self.ids = [image_id for image_id in self.ids if filter_image(image_id)]

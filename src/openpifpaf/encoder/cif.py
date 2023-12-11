@@ -69,7 +69,7 @@ class CifGenerator():
         field_h = bg_mask.shape[0] + 2 * self.config.padding
         self.intensities = np.zeros((n_fields, field_h, field_w), dtype=np.float32)
         # self.fields_reg = np.full((n_fields, 2, field_h, field_w), np.nan, dtype=np.float32)
-        self.fields_reg = np.zeros((n_fields, 3, field_h, field_w), np.nan, dtype=np.float32)
+        self.fields_reg = np.full((n_fields, 3, field_h, field_w), np.nan, dtype=np.float32)
         self.fields_bmin = np.full((n_fields, field_h, field_w), np.nan, dtype=np.float32)
         self.fields_scale = np.full((n_fields, field_h, field_w), np.nan, dtype=np.float32)
         self.fields_reg_l = np.full((n_fields, field_h, field_w), np.inf, dtype=np.float32)
@@ -122,7 +122,7 @@ class CifGenerator():
 
         # update regression
         patch = self.fields_reg[f, :, miny:maxy, minx:maxx]
-        patch[:, mask] = sink_reg[:, mask]
+        patch[:2, mask] = sink_reg[:, mask]
 
         # update bmin
         bmin = self.config.bmin / self.config.meta.stride
