@@ -6,8 +6,10 @@ import hashlib
 import logging
 import shutil
 import time
+from torch.utils.tensorboard import SummaryWriter
 
 import torch
+torch.cuda.empty_cache()
 
 from ..profiler import TorchProfiler
 
@@ -15,6 +17,7 @@ LOG = logging.getLogger(__name__)
 
 
 class Trainer():
+    
     epochs = None
     n_train_batches = None
     n_val_batches = None
@@ -50,6 +53,9 @@ class Trainer():
         self.n_clipped_grad = 0
         self.max_norm = 0.0
 
+        # Create a SummaryWriter object 
+        self.writer = SummaryWriter()
+        
         if self.train_profile and (not torch.distributed.is_initialized()
                                    or torch.distributed.get_rank() == 0):
             # monkey patch to profile self.train_batch()
@@ -156,10 +162,12 @@ class Trainer():
                 val_scenes.sampler.set_epoch(epoch)
 
             self.train(train_scenes, epoch)
+            self.write_model(epoch + 1, epoch + 1 == self.epochs)
+
 
             if (epoch + 1) % self.val_interval == 0 \
                or epoch + 1 == self.epochs:
-                self.write_model(epoch + 1, epoch + 1 == self.epochs)
+                # self.write_model(epoch + 1, epoch + 1 == self.epochs)
                 self.val(val_scenes, epoch + 1)
 
     # pylint: disable=method-hidden,too-many-branches,too-many-statements
@@ -309,6 +317,13 @@ class Trainer():
 
             # write training loss
             if batch_idx % self.log_interval == 0:
+                current_time = time.time()
+                # record time spent for each log_interval
+                interval_time = current_time - last_batch_end
+                
+                
+                # interval_time = current_time - last_batch_end
+                
                 batch_info = {
                     'type': 'train',
                     'epoch': epoch, 'batch': batch_idx, 'n_batches': len(scenes),
@@ -318,10 +333,16 @@ class Trainer():
                     'loss': round(loss, 3) if loss is not None else None,
                     'head_losses': [round(l, 3) if l is not None else None
                                     for l in head_losses],
+                    'epoch_time': round(interval_time, 3),
+                    
                 }
+                
+                current_time = time.time()
                 if hasattr(self.loss, 'batch_meta'):
                     batch_info.update(self.loss.batch_meta())
                 LOG.info(batch_info)
+                self.writer.add_scalar('Training/Batch Loss', loss, batch_idx)
+                self.writer.add_scalar('Training/Total Loss', loss, epoch * len(scenes) + batch_idx)
 
             # initialize ema
             if self.ema is None and self.ema_decay:
@@ -349,19 +370,24 @@ class Trainer():
         })
         self.n_clipped_grad = 0
         self.max_norm = 0.0
+        self.writer.add_scalar('Training/Epoch Loss', epoch_loss / len(scenes), epoch)
+        
+        
+        self.writer.close()
 
     def val(self, scenes, epoch):
         start_time = time.time()
 
         # Train mode implies outputs are for losses, so have to use it here.
         self.model.train()
-        if self.fix_batch_norm is True \
-           or (self.fix_batch_norm is not False and self.fix_batch_norm <= epoch - 1):
-            LOG.info('fix batchnorm')
-            for m in self.model.modules():
-                if isinstance(m, (torch.nn.BatchNorm1d, torch.nn.BatchNorm2d)):
-                    LOG.debug('eval mode for: %s', m)
-                    m.eval()
+        # self.model.eval()
+        # if self.fix_batch_norm is True \
+        #    or (self.fix_batch_norm is not False and self.fix_batch_norm <= epoch - 1):
+        #     LOG.info('fix batchnorm')
+        for m in self.model.modules():
+            if isinstance(m, (torch.nn.BatchNorm1d, torch.nn.BatchNorm2d, torch.nn.SyncBatchNorm)):
+                LOG.debug('eval mode for: %s', m)
+                m.eval()
 
         epoch_loss = 0.0
         head_epoch_losses = None
@@ -394,6 +420,10 @@ class Trainer():
                             for l, c in zip(head_epoch_losses, head_epoch_counts)],
             'time': round(eval_time, 1),
         })
+
+
+
+
 
     def write_model(self, epoch, final=True):
         if torch.distributed.is_initialized() and torch.distributed.get_rank() != 0:
