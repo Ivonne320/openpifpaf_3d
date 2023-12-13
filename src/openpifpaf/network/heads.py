@@ -372,7 +372,8 @@ class CompositeField4(HeadNetwork):
                         continue
                     # reg_x = x[:, :, first_reg_feature + i * 2:first_reg_feature + (i + 1) * 2]
                     reg_x = x[:, :, first_reg_feature + i * 3:first_reg_feature + (i + 1) * 3]
-                    reg_x.add_(index_field)
+                    # reg_x.add_(index_field)
+                    reg_x[:, :, 0:2, :, :].add_(index_field)
 
             # scale
             # first_scale_feature = 1 + self.n_confidences + self.n_vectors * 2

@@ -162,7 +162,8 @@ class Trainer():
                 val_scenes.sampler.set_epoch(epoch)
 
             self.train(train_scenes, epoch)
-            self.write_model(epoch + 1, epoch + 1 == self.epochs)
+            if (epoch + 1) % 5 == 0:
+                self.write_model(epoch + 1, epoch + 1 == self.epochs)
 
 
             if (epoch + 1) % self.val_interval == 0 \
