@@ -21,6 +21,7 @@ void cif_hr_add_gauss_op(const torch::Tensor& accumulated,
                          float v,
                          float x,
                          float y,
+                         float z,
                          float sigma,
                          float truncate = 3.0);
 
